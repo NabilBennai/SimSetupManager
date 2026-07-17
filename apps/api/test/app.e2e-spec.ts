@@ -12,9 +12,9 @@ describe('AppController (e2e)', () => {
     await app.init();
   });
 
-  it('/ (GET) enveloppe la réponse avec data et meta.requestId', () => {
+  it('/api/v1 (GET) enveloppe la réponse avec data et meta.requestId', () => {
     return request(app.getHttpServer())
-      .get('/')
+      .get('/api/v1')
       .expect(200)
       .expect((res: { body: unknown }) => {
         const body = res.body as { data: string; meta: { requestId: string } };

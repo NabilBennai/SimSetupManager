@@ -6,3 +6,4 @@ coverage
 pnpm-lock.yaml
 docs/**/*.md
 README.md
+apps/api/openapi.json

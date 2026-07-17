@@ -7,6 +7,7 @@ import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { requestIdMiddleware } from './common/middleware/request-id.middleware';
+import { mountSwaggerUi } from './infrastructure/openapi/openapi.config';
 
 /**
  * Point de création unique de l'application Nest, partagé entre le serveur
@@ -22,6 +23,8 @@ export async function createApp(expressInstance: Express): Promise<NestExpressAp
 
   app.use(requestIdMiddleware);
   app.useLogger(app.get(Logger));
+  app.setGlobalPrefix('api/v1');
+  mountSwaggerUi(app);
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new ResponseInterceptor());
 
