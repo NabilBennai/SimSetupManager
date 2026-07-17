@@ -1,7 +1,8 @@
+import { DatePipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import type { PublicSetup } from '@sim-setup-manager/contracts';
+import type { PublicSetup, PublicSetupVersionSummary } from '@sim-setup-manager/contracts';
 
 import { ErrorNotificationService } from '../../../core/error-handling/error-notification.service';
 import { SetupsService } from '../../../core/setups/setups.service';
@@ -9,7 +10,7 @@ import { SetupsService } from '../../../core/setups/setups.service';
 @Component({
   selector: 'app-setup-detail',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, FormsModule, DatePipe],
   templateUrl: './setup-detail.html',
   styleUrl: './setup-detail.scss',
 })
@@ -29,6 +30,12 @@ export class SetupDetail {
   protected readonly busy = signal(false);
   protected readonly error = this.errorNotification.lastError;
 
+  protected readonly versions = signal<PublicSetupVersionSummary[]>([]);
+  protected readonly versionsLoading = signal(true);
+  protected readonly newVersionNotes = signal('');
+  protected readonly newVersionProgress = signal<number | null>(null);
+  protected readonly newVersionError = signal<string | null>(null);
+
   protected readonly form = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
     sessionType: [''],
@@ -41,6 +48,7 @@ export class SetupDetail {
 
   constructor() {
     void this.load();
+    void this.loadVersions();
   }
 
   async load(): Promise<void> {
@@ -156,6 +164,67 @@ export class SetupDetail {
       await this.router.navigate(['/setups']);
     } catch {
       // le message est déjà exposé via ErrorNotificationService (apiErrorInterceptor)
+      this.busy.set(false);
+    }
+  }
+
+  async loadVersions(): Promise<void> {
+    this.versionsLoading.set(true);
+    try {
+      this.versions.set(await this.setupsService.listVersions(this.setupId));
+    } catch {
+      // le message est déjà exposé via ErrorNotificationService (apiErrorInterceptor)
+    } finally {
+      this.versionsLoading.set(false);
+    }
+  }
+
+  async onNewVersionFileSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    const setup = this.setup();
+    if (!file || !setup) {
+      return;
+    }
+
+    this.newVersionError.set(null);
+    this.newVersionProgress.set(0);
+    try {
+      const prepared = await this.setupsService.prepareUpload({
+        gameId: setup.gameId,
+        originalName: file.name,
+        mimeType: file.type || 'application/octet-stream',
+        sizeBytes: file.size,
+      });
+      await this.setupsService.uploadFile(prepared.uploadUrl, file, (percent) =>
+        this.newVersionProgress.set(percent),
+      );
+      const fileObject = await this.setupsService.completeUpload(prepared.uploadId);
+      await this.setupsService.addVersion(this.setupId, {
+        fileId: fileObject.id,
+        changeNotes: this.newVersionNotes() || undefined,
+      });
+      this.newVersionNotes.set('');
+      input.value = '';
+      await Promise.all([this.load(), this.loadVersions()]);
+    } catch {
+      this.newVersionError.set(
+        "Échec de l'envoi de la nouvelle version. Vérifiez le fichier puis réessayez.",
+      );
+    } finally {
+      this.newVersionProgress.set(null);
+    }
+  }
+
+  async setReference(versionId: string): Promise<void> {
+    this.busy.set(true);
+    try {
+      const updated = await this.setupsService.setReferenceVersion(this.setupId, versionId);
+      this.setup.set(updated);
+      await this.loadVersions();
+    } catch {
+      // le message est déjà exposé via ErrorNotificationService (apiErrorInterceptor)
+    } finally {
       this.busy.set(false);
     }
   }

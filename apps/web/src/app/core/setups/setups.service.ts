@@ -1,6 +1,7 @@
 import { HttpClient, HttpEventType } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import type {
+  AddSetupVersionPayload,
   ApiPaginatedResponse,
   ApiSuccessResponse,
   CreateSetupPayload,
@@ -11,6 +12,7 @@ import type {
   PublicFileObject,
   PublicSetup,
   PublicSetupSummary,
+  PublicSetupVersionSummary,
   UpdateSetupPayload,
 } from '@sim-setup-manager/contracts';
 import { firstValueFrom } from 'rxjs';
@@ -101,6 +103,38 @@ export class SetupsService {
     const res = await firstValueFrom(
       this.http.post<ApiSuccessResponse<PublicFileObject>>(
         `${API_BASE_URL}/uploads/${uploadId}/complete`,
+        {},
+      ),
+    );
+    return res.data;
+  }
+
+  async listVersions(setupId: string): Promise<PublicSetupVersionSummary[]> {
+    const res = await firstValueFrom(
+      this.http.get<ApiSuccessResponse<PublicSetupVersionSummary[]>>(
+        `${API_BASE_URL}/setups/${setupId}/versions`,
+      ),
+    );
+    return res.data;
+  }
+
+  async addVersion(
+    setupId: string,
+    payload: AddSetupVersionPayload,
+  ): Promise<PublicSetupVersionSummary> {
+    const res = await firstValueFrom(
+      this.http.post<ApiSuccessResponse<PublicSetupVersionSummary>>(
+        `${API_BASE_URL}/setups/${setupId}/versions`,
+        payload,
+      ),
+    );
+    return res.data;
+  }
+
+  async setReferenceVersion(setupId: string, versionId: string): Promise<PublicSetup> {
+    const res = await firstValueFrom(
+      this.http.post<ApiSuccessResponse<PublicSetup>>(
+        `${API_BASE_URL}/setups/${setupId}/versions/${versionId}/reference`,
         {},
       ),
     );

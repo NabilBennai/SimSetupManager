@@ -127,6 +127,78 @@
           }
         </div>
       </article>
+
+      <article class="card card--detail versions-card">
+        <div class="card__body">
+          <h2>Historique des versions</h2>
+
+          @if (versionsLoading()) {
+            <p class="eyebrow">Chargement…</p>
+          } @else {
+            <ul class="version-list">
+              @for (version of versions(); track version.id) {
+                <li class="version-row">
+                  <div>
+                    <p class="version-row__title">
+                      Version {{ version.versionNumber }}
+                      @if (version.isReference) {
+                        <span class="badge">Référence</span>
+                      }
+                    </p>
+                    <div class="version-row__meta">
+                      <span>{{ version.createdAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+                      <span>{{ version.authorDisplayName }}</span>
+                      <span
+                        >{{ version.file.originalName }} ({{ version.file.sizeBytes }} octets)</span
+                      >
+                    </div>
+                    @if (version.changeNotes) {
+                      <p class="version-row__notes">{{ version.changeNotes }}</p>
+                    }
+                  </div>
+                  @if (!version.isReference) {
+                    <button
+                      class="btn btn--ghost"
+                      type="button"
+                      [disabled]="busy()"
+                      (click)="setReference(version.id)"
+                    >
+                      Définir comme référence
+                    </button>
+                  }
+                </li>
+              }
+            </ul>
+          }
+
+          <div class="new-version">
+            <label>
+              Notes de version (optionnel)
+              <input
+                type="text"
+                [(ngModel)]="newVersionNotes"
+                placeholder="Ex. réglage pour piste mouillée"
+              />
+            </label>
+
+            <label class="file-drop">
+              Ajouter une nouvelle version
+              <input type="file" (change)="onNewVersionFileSelected($event)" />
+            </label>
+
+            @if (newVersionProgress(); as progress) {
+              <div class="progress">
+                <div class="progress__bar" [style.width.%]="progress"></div>
+              </div>
+              <p class="eyebrow">Envoi… {{ progress }}%</p>
+            }
+
+            @if (newVersionError(); as message) {
+              <p class="error">{{ message }}</p>
+            }
+          </div>
+        </div>
+      </article>
     }
   </div>
 </section>
