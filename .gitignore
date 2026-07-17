@@ -27,6 +27,9 @@ prisma/local.db*
 # Client Prisma généré (régénéré par `pnpm db:generate` / postinstall)
 apps/api/src/infrastructure/database/generated/
 
+# Fichiers de setup uploadés (stockage disque local, voir infrastructure/storage)
+/storage/
+
 # Logs
 *.log
 npm-debug.log*

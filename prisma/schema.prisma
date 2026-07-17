@@ -11,18 +11,21 @@ generator client {
 // String dont les valeurs autorisées sont validées côté application
 // (voir apps/api/src/modules/users).
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
-  passwordHash String
-  displayName  String
-  avatarUrl    String?
-  role         String    @default("MEMBER")
-  status       String    @default("ACTIVE")
-  preferences  String    @default("{}")
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  deletedAt    DateTime?
-  sessions     Session[]
+  id            String         @id @default(cuid())
+  email         String         @unique
+  passwordHash  String
+  displayName   String
+  avatarUrl     String?
+  role          String         @default("MEMBER")
+  status        String         @default("ACTIVE")
+  preferences   String         @default("{}")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+  sessions      Session[]
+  setups        Setup[]
+  fileObjects   FileObject[]
+  uploadIntents UploadIntent[]
 }
 
 model Session {
@@ -48,8 +51,10 @@ model Game {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
-  categories CarCategory[]
-  cars       Car[]
+  categories    CarCategory[]
+  cars          Car[]
+  uploadIntents UploadIntent[]
+  setups        Setup[]
 }
 
 model CarCategory {
@@ -73,6 +78,7 @@ model Car {
   manufacturer String
   name         String
   isActive     Boolean      @default(true)
+  setups       Setup[]
 
   @@unique([gameId, slug])
   @@index([gameId, isActive])
@@ -86,6 +92,91 @@ model Track {
   layout      String?
   countryCode String
   isActive    Boolean @default(true)
+  setups      Setup[]
 
   @@index([name])
+}
+
+model Setup {
+  id                 String         @id @default(cuid())
+  ownerId            String
+  owner              User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  gameId             String
+  game               Game           @relation(fields: [gameId], references: [id])
+  carId              String
+  car                Car            @relation(fields: [carId], references: [id])
+  trackId            String
+  track              Track          @relation(fields: [trackId], references: [id])
+  title              String
+  descriptionPublic  String?
+  notesPrivate       String?
+  visibility         String         @default("PRIVATE")
+  sessionType        String?
+  weather            String?
+  trackTemperatureC  Float?
+  airTemperatureC    Float?
+  gameVersion        String?
+  referenceVersionId String?        @unique
+  referenceVersion   SetupVersion?  @relation("SetupReference", fields: [referenceVersionId], references: [id])
+  isArchived         Boolean        @default(false)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  deletedAt          DateTime?
+  versions           SetupVersion[] @relation("SetupVersions")
+
+  @@index([ownerId, isArchived, updatedAt])
+}
+
+model SetupVersion {
+  id            String     @id @default(cuid())
+  setupId       String
+  setup         Setup      @relation("SetupVersions", fields: [setupId], references: [id], onDelete: Cascade)
+  versionNumber Int
+  fileObjectId  String
+  fileObject    FileObject @relation(fields: [fileObjectId], references: [id])
+  changeNotes   String?
+  createdAt     DateTime   @default(now())
+
+  referencedBy Setup? @relation("SetupReference")
+
+  @@unique([setupId, versionNumber])
+}
+
+// uploadedByUserId n'est pas dans docs/06-modele-de-donnees.md mais est
+// nécessaire pour vérifier qu'un fileId fourni à POST /setups appartient
+// bien à l'appelant avant d'être attaché à une version.
+model FileObject {
+  id               String         @id @default(cuid())
+  uploadedByUserId String
+  uploadedBy       User           @relation(fields: [uploadedByUserId], references: [id], onDelete: Cascade)
+  storageProvider  String
+  storageKey       String         @unique
+  originalName     String
+  mimeType         String
+  extension        String
+  sizeBytes        Int
+  sha256           String
+  status           String         @default("VALIDATED")
+  createdAt        DateTime       @default(now())
+  deletedAt        DateTime?
+  versions         SetupVersion[]
+}
+
+model UploadIntent {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gameId            String
+  game              Game      @relation(fields: [gameId], references: [id])
+  storageKey        String    @unique
+  originalName      String
+  mimeType          String
+  expectedExtension String
+  expectedSizeBytes Int
+  status            String    @default("PENDING")
+  expiresAt         DateTime
+  completedAt       DateTime?
+  createdAt         DateTime  @default(now())
+
+  @@index([status, expiresAt])
 }

@@ -5,10 +5,20 @@ import { DatabaseModule } from './infrastructure/database/database.module';
 import { ObservabilityModule } from './infrastructure/observability/observability.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ReferencesModule } from './modules/references/references.module';
+import { SetupsModule } from './modules/setups/setups.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
-  imports: [ObservabilityModule, DatabaseModule, AuthModule, UsersModule, ReferencesModule],
+  imports: [
+    ObservabilityModule,
+    DatabaseModule,
+    AuthModule,
+    UsersModule,
+    ReferencesModule,
+    UploadsModule,
+    SetupsModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
