@@ -8,7 +8,7 @@
 | Frontend | Angular, composants standalone, Signals, Router, formulaires réactifs |
 | Backend | NestJS, API REST versionnée |
 | Accès aux données | Prisma ORM |
-| Base de données | PostgreSQL managé |
+| Base de données | Turso (libSQL, compatible SQLite) managé |
 | Stockage de fichiers | Stockage objet compatible URL signées, par exemple Vercel Blob ou S3 |
 | Authentification | Fournisseur managé ou module NestJS avec sessions/JWT sécurisés |
 | Validation | DTO NestJS + validation partagée des contrats lorsque pertinent |
@@ -242,7 +242,7 @@ Le cache n’est pas requis pour le premier incrément privé. Lors de l’ouver
 
 ### Intégration
 
-- endpoints avec PostgreSQL isolé ;
+- endpoints avec base Turso/SQLite isolée ;
 - création et versionnement ;
 - upload préparé/confirmé ;
 - contraintes d’unicité ;

@@ -8,13 +8,15 @@
 
 **Motif :** réduire les coûts de coordination et d’exploitation au stade MVP, tout en conservant des frontières facilitant une extraction future.
 
-## ADR-002 — PostgreSQL et Prisma
+## ADR-002 — Turso (libSQL) et Prisma
 
-**Statut :** accepté.
+**Statut :** accepté (révisé le 2026-07-17, remplace la décision initiale PostgreSQL).
 
-**Décision :** utiliser PostgreSQL pour les données structurées et Prisma comme couche d’accès.
+**Décision :** utiliser Turso (libSQL, compatible SQLite) pour les données structurées, avec Prisma comme couche d’accès via les driver adapters (`@prisma/adapter-libsql`).
 
-**Motif :** intégrité relationnelle, migrations, filtres riches et typage TypeScript.
+**Motif :** intégration native avec Vercel, latence réduite via replicas Turso, coût d’exploitation faible au stade MVP, migrations et typage TypeScript conservés grâce à Prisma. Le développement local utilise un fichier SQLite local ; les environnements preview/production utilisent des bases Turso distinctes.
+
+**Conséquence :** les contraintes relationnelles avancées (types avancés, certaines fonctions PostgreSQL) ne sont pas disponibles ; le modèle de données (`docs/06-modele-de-donnees.md`) doit rester compatible SQLite. Une migration vers PostgreSQL managé reste possible ultérieurement si des besoins relationnels avancés apparaissent.
 
 ## ADR-003 — Fichiers hors base de données
 
@@ -56,11 +58,11 @@
 
 **Motif :** minimiser les fuites involontaires et respecter les attentes utilisateur.
 
-## ADR-008 — PostgreSQL avant moteur de recherche dédié
+## ADR-008 — Turso avant moteur de recherche dédié
 
 **Statut :** accepté.
 
-**Décision :** réaliser la recherche MVP dans PostgreSQL.
+**Décision :** réaliser la recherche MVP directement dans Turso (SQL standard, `LIKE`/`FTS5` si nécessaire).
 
 **Motif :** éviter une infrastructure supplémentaire avant d’avoir des mesures justifiant son coût.
 

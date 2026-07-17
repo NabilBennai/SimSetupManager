@@ -1,2 +1,30 @@
 .idea
 *.iml
+
+# Base de connaissance interne (non versionnée)
+.agents/
+
+# Dépendances et builds
+node_modules/
+dist/
+.turbo/
+.angular/
+build/
+
+# Environnements et secrets
+.env
+.env.*
+!.env.example
+
+# Vercel
+.vercel/
+
+# Base de données locale
+*.db
+*.db-journal
+prisma/local.db*
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*

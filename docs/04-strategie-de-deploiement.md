@@ -2,7 +2,7 @@
 
 ## 4.1 Cible
 
-Le frontend Angular et l’API NestJS sont déployés dans deux projets Vercel reliés au même monorepo. PostgreSQL et le stockage objet sont des services managés externes ou intégrés à l’écosystème Vercel.
+Le frontend Angular et l’API NestJS sont déployés dans deux projets Vercel reliés au même monorepo. Turso (libSQL) et le stockage objet sont des services managés externes ou intégrés à l’écosystème Vercel.
 
 Vercel documente la prise en charge d’Angular et le déploiement de NestJS via Vercel Functions. L’architecture doit néanmoins rester compatible avec les contraintes serverless : processus sans état, absence de serveur permanent et prudence sur les connexions persistantes.
 
@@ -40,18 +40,18 @@ Chaque environnement possède :
 - Limites de durée et de mémoire surveillées.
 - Aucun fichier local utilisé comme stockage durable.
 
-## 4.4 Base PostgreSQL
+## 4.4 Base Turso (libSQL)
 
 Exigences :
 
-- connexions compatibles serverless ou pooler ;
+- connexions compatibles serverless via le client `@libsql/client` ;
 - chiffrement en transit et au repos ;
-- sauvegardes automatiques ;
+- sauvegardes automatiques (Turso) ;
 - restauration à un instant donné si disponible ;
-- branche ou base de preview lorsque le fournisseur le permet ;
+- base Turso distincte par environnement (local en SQLite fichier, preview et production sur Turso) ;
 - région proche de l’API.
 
-Prisma doit être configuré de manière adaptée au fournisseur. Les migrations sont exécutées par un job CI contrôlé, pas automatiquement par chaque instance de fonction.
+Prisma est configuré avec les driver adapters (`@prisma/adapter-libsql`) pour se connecter à Turso en production/preview et à un fichier SQLite local en développement. Les migrations sont exécutées par un job CI contrôlé, pas automatiquement par chaque instance de fonction.
 
 ## 4.5 Stockage objet
 
@@ -111,7 +111,7 @@ Exemples :
 
 ```text
 DATABASE_URL=
-DIRECT_DATABASE_URL=
+TURSO_AUTH_TOKEN=
 STORAGE_TOKEN=
 AUTH_SECRET=
 APP_ORIGIN=
@@ -138,7 +138,7 @@ Alertes minimales :
 - taux d’erreur API supérieur au seuil ;
 - hausse des réponses 401/403 anormales ;
 - latence p95 élevée ;
-- erreurs de connexion PostgreSQL ;
+- erreurs de connexion Turso ;
 - échec de confirmation d’upload ;
 - écart entre blobs chargés et versions confirmées ;
 - consommation proche des limites de plateforme.
