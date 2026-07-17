@@ -13,10 +13,15 @@
     "test": "turbo run test",
     "check-types": "turbo run check-types",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "postinstall": "prisma generate"
   },
   "devDependencies": {
+    "@prisma/client": "7.8.0",
     "prettier": "^3.4.2",
+    "prisma": "7.8.0",
     "turbo": "2.10.5"
   }
 }

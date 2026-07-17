@@ -1,0 +1,16 @@
+datasource db {
+  provider = "sqlite"
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../apps/api/src/infrastructure/database/generated"
+}
+
+// Modèle temporaire utilisé uniquement pour valider la chaîne
+// Prisma -> Turso (libSQL) pendant l'Epic 0. Le modèle de données réel
+// (docs/06-modele-de-donnees.md) sera introduit à partir de l'Epic 2.
+model HealthCheck {
+  id        String   @id @default(cuid())
+  checkedAt DateTime @default(now())
+}

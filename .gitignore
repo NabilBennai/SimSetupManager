@@ -24,6 +24,9 @@ build/
 *.db-journal
 prisma/local.db*
 
+# Client Prisma généré (régénéré par `pnpm db:generate` / postinstall)
+apps/api/src/infrastructure/database/generated/
+
 # Logs
 *.log
 npm-debug.log*
