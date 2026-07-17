@@ -1,5 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type {
+  AddSetupVersionPayload,
   CreateSetupPayload,
   DownloadUrlResponse,
   Paginated,
@@ -9,9 +10,9 @@ import type {
   UpdateSetupPayload,
 } from '@sim-setup-manager/contracts';
 
-import { toPublicFileObject } from '../uploads/file-object.mapper';
+import { toPublicFileObject, type FileObjectLike } from '../uploads/file-object.mapper';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
-import type { Prisma } from '../../infrastructure/database/generated/client';
+import type { FileObject, Prisma } from '../../infrastructure/database/generated/client';
 import {
   STORAGE_PROVIDER,
   type StorageProvider,
@@ -49,7 +50,12 @@ const summaryInclude = {
 
 const detailInclude = {
   ...summaryInclude,
+  owner: { select: { displayName: true } },
   referenceVersion: { include: { fileObject: true } },
+} as const;
+
+const versionInclude = {
+  fileObject: true,
 } as const;
 
 type SetupWithSummaryRelations = {
@@ -68,6 +74,7 @@ type SetupWithSummaryRelations = {
 
 type SetupWithDetailRelations = SetupWithSummaryRelations & {
   ownerId: string;
+  owner: { displayName: string };
   descriptionPublic: string | null;
   notesPrivate: string | null;
   visibility: string;
@@ -110,7 +117,7 @@ export class SetupsService {
       this.prisma.game.findUnique({ where: { id: payload.gameId } }),
       this.prisma.car.findUnique({ where: { id: payload.carId } }),
       this.prisma.track.findUnique({ where: { id: payload.trackId } }),
-      this.prisma.fileObject.findUnique({ where: { id: payload.fileId } }),
+      this.assertFileAvailable(userId, payload.fileId),
     ]);
 
     if (!game || !game.isActive) {
@@ -121,16 +128,6 @@ export class SetupsService {
     }
     if (!track || !track.isActive) {
       throw new NotFoundException('Circuit introuvable.');
-    }
-    if (!file || file.uploadedByUserId !== userId || file.status !== 'VALIDATED') {
-      throw new NotFoundException('Fichier introuvable.');
-    }
-
-    const existingVersion = await this.prisma.setupVersion.findFirst({
-      where: { fileObjectId: file.id },
-    });
-    if (existingVersion) {
-      throw new NotFoundException('Ce fichier est déjà attaché à un setup.');
     }
 
     const tagNames = normalizeTags(payload.tags);
@@ -282,6 +279,109 @@ export class SetupsService {
     };
   }
 
+  /**
+   * Ajoute une nouvelle version (VER-01) : l'ancienne reste intacte
+   * (immuable, ADR-006). Devient la version de référence par défaut —
+   * comportement le plus attendu (on vient d'importer la dernière
+   * révision) — mais VER-03 permet de revenir à n'importe quelle version.
+   */
+  async addVersion(
+    userId: string,
+    setupId: string,
+    payload: AddSetupVersionPayload,
+  ): Promise<PublicSetupVersionSummary> {
+    const setup = await this.findOwnedOrThrow(userId, setupId, {
+      owner: { select: { displayName: true } },
+    });
+    const { owner } = setup as { owner: { displayName: string } };
+    const file = await this.assertFileAvailable(userId, payload.fileId);
+
+    const versionId = await this.prisma.$transaction(async (tx) => {
+      const lastVersion = await tx.setupVersion.findFirst({
+        where: { setupId },
+        orderBy: { versionNumber: 'desc' },
+      });
+
+      const version = await tx.setupVersion.create({
+        data: {
+          setupId,
+          versionNumber: (lastVersion?.versionNumber ?? 0) + 1,
+          fileObjectId: file.id,
+          changeNotes: payload.changeNotes,
+        },
+      });
+
+      await tx.setup.update({ where: { id: setupId }, data: { referenceVersionId: version.id } });
+
+      return version.id;
+    });
+
+    const created = await this.prisma.setupVersion.findUniqueOrThrow({
+      where: { id: versionId },
+      include: versionInclude,
+    });
+
+    return this.toPublicVersion(created, owner.displayName, true);
+  }
+
+  /** Historique des versions (VER-02) : date, notes, auteur, fichier, indicateur de référence. */
+  async listVersions(userId: string, setupId: string): Promise<PublicSetupVersionSummary[]> {
+    const setup = await this.findOwnedOrThrow(userId, setupId, {
+      owner: { select: { displayName: true } },
+    });
+    const { referenceVersionId, owner } = setup as {
+      referenceVersionId: string | null;
+      owner: { displayName: string };
+    };
+
+    const versions = await this.prisma.setupVersion.findMany({
+      where: { setupId },
+      include: versionInclude,
+      orderBy: { versionNumber: 'desc' },
+    });
+
+    return versions.map((version) =>
+      this.toPublicVersion(version, owner.displayName, version.id === referenceVersionId),
+    );
+  }
+
+  /** Marque une version comme référence active (VER-03) : une seule à la fois par setup. */
+  async setReferenceVersion(
+    userId: string,
+    setupId: string,
+    versionId: string,
+  ): Promise<PublicSetup> {
+    await this.findOwnedOrThrow(userId, setupId, {});
+
+    const version = await this.prisma.setupVersion.findFirst({ where: { id: versionId, setupId } });
+    if (!version) {
+      throw new NotFoundException('Version introuvable pour ce setup.');
+    }
+
+    await this.prisma.setup.update({
+      where: { id: setupId },
+      data: { referenceVersionId: versionId },
+    });
+    return this.getForOwner(userId, setupId);
+  }
+
+  /** Vérifie que le fichier existe, appartient à l'appelant, est validé et pas déjà utilisé. */
+  private async assertFileAvailable(userId: string, fileId: string): Promise<FileObject> {
+    const file = await this.prisma.fileObject.findUnique({ where: { id: fileId } });
+    if (!file || file.uploadedByUserId !== userId || file.status !== 'VALIDATED') {
+      throw new NotFoundException('Fichier introuvable.');
+    }
+
+    const existingVersion = await this.prisma.setupVersion.findFirst({
+      where: { fileObjectId: file.id },
+    });
+    if (existingVersion) {
+      throw new NotFoundException('Ce fichier est déjà attaché à un setup.');
+    }
+
+    return file;
+  }
+
   /** Upsert des tags par nom puis remplacement complet des liens du setup. */
   private async replaceTags(
     tx: TransactionClient,
@@ -361,7 +461,7 @@ export class SetupsService {
       trackName: setup.track.name,
       tags: setup.tags.map((link) => link.tag.name),
       referenceVersion: setup.referenceVersion
-        ? this.toPublicVersion(setup.referenceVersion)
+        ? this.toPublicVersion(setup.referenceVersion, setup.owner.displayName, true)
         : null,
       createdAt: setup.createdAt.toISOString(),
       updatedAt: setup.updatedAt.toISOString(),
@@ -369,13 +469,23 @@ export class SetupsService {
   }
 
   private toPublicVersion(
-    version: SetupWithDetailRelations['referenceVersion'] & object,
+    version: {
+      id: string;
+      versionNumber: number;
+      changeNotes: string | null;
+      createdAt: Date;
+      fileObject: FileObjectLike;
+    },
+    authorDisplayName: string,
+    isReference: boolean,
   ): PublicSetupVersionSummary {
     return {
       id: version.id,
       versionNumber: version.versionNumber,
       changeNotes: version.changeNotes,
       createdAt: version.createdAt.toISOString(),
+      authorDisplayName,
+      isReference,
       file: toPublicFileObject(version.fileObject),
     };
   }

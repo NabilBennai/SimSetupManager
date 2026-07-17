@@ -1,6 +1,6 @@
 import type { PublicFileObject } from '@sim-setup-manager/contracts';
 
-interface FileObjectLike {
+export interface FileObjectLike {
   id: string;
   originalName: string;
   mimeType: string;

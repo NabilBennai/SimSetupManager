@@ -16,11 +16,13 @@ import type {
   Paginated,
   PublicSetup,
   PublicSetupSummary,
+  PublicSetupVersionSummary,
 } from '@sim-setup-manager/contracts';
 
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { SessionAuthGuard } from '../auth/guards/session-auth.guard';
 import type { User } from '../../infrastructure/database/generated/client';
+import { AddSetupVersionDto } from './dto/add-setup-version.dto';
 import { CreateSetupDto } from './dto/create-setup.dto';
 import { ListSetupsQueryDto } from './dto/list-setups-query.dto';
 import { UpdateSetupDto } from './dto/update-setup.dto';
@@ -83,6 +85,36 @@ export class SetupsController {
   @ApiOperation({ summary: 'Génère une URL de téléchargement privée à courte durée.' })
   downloadUrl(@CurrentUser() user: User, @Param('id') id: string): Promise<DownloadUrlResponse> {
     return this.setupsService.createDownloadUrl(user.id, id);
+  }
+
+  @Post(':id/versions')
+  @ApiOperation({ summary: 'Ajoute une nouvelle version (fichier immuable, ADR-006).' })
+  addVersion(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Body() dto: AddSetupVersionDto,
+  ): Promise<PublicSetupVersionSummary> {
+    return this.setupsService.addVersion(user.id, id, dto);
+  }
+
+  @Get(':id/versions')
+  @ApiOperation({ summary: "Historique des versions d'un setup." })
+  listVersions(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+  ): Promise<PublicSetupVersionSummary[]> {
+    return this.setupsService.listVersions(user.id, id);
+  }
+
+  @Post(':id/versions/:versionId/reference')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Marque une version comme référence active.' })
+  setReferenceVersion(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Param('versionId') versionId: string,
+  ): Promise<PublicSetup> {
+    return this.setupsService.setReferenceVersion(user.id, id, versionId);
   }
 
   @Delete(':id')

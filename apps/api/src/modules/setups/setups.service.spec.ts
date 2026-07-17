@@ -5,7 +5,7 @@ import { SetupsService } from './setups.service';
 describe('SetupsService', () => {
   const tx = {
     setup: { create: jest.fn(), update: jest.fn() },
-    setupVersion: { create: jest.fn() },
+    setupVersion: { create: jest.fn(), findFirst: jest.fn() },
     tag: { upsert: jest.fn() },
     tagLink: { deleteMany: jest.fn(), createMany: jest.fn() },
   };
@@ -14,7 +14,11 @@ describe('SetupsService', () => {
     car: { findUnique: jest.fn() },
     track: { findUnique: jest.fn() },
     fileObject: { findUnique: jest.fn() },
-    setupVersion: { findFirst: jest.fn() },
+    setupVersion: {
+      findFirst: jest.fn(),
+      findMany: jest.fn(),
+      findUniqueOrThrow: jest.fn(),
+    },
     setup: { findFirst: jest.fn(), findMany: jest.fn(), count: jest.fn(), update: jest.fn() },
     $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(tx)),
   };
@@ -248,6 +252,135 @@ describe('SetupsService', () => {
       prisma.setup.findFirst.mockResolvedValue(null);
 
       await expect(service.getForOwner('u1', 'not-mine')).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
+  describe('addVersion', () => {
+    it("lève 404 si le setup n'appartient pas à l'appelant", async () => {
+      prisma.setup.findFirst.mockResolvedValue(null);
+
+      await expect(service.addVersion('u1', 'not-mine', { fileId: 'f1' })).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+    });
+
+    it("lève 404 si le fichier n'est pas disponible (déjà utilisé, pas VALIDATED...)", async () => {
+      prisma.setup.findFirst.mockResolvedValue({ id: 'setup-1', owner: { displayName: 'Owner' } });
+      prisma.fileObject.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.addVersion('u1', 'setup-1', { fileId: 'missing' }),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('incrémente versionNumber à partir de la dernière version et devient la référence', async () => {
+      prisma.setup.findFirst.mockResolvedValue({ id: 'setup-1', owner: { displayName: 'Owner' } });
+      prisma.fileObject.findUnique.mockResolvedValue({
+        id: 'f2',
+        uploadedByUserId: 'u1',
+        status: 'VALIDATED',
+      });
+      prisma.setupVersion.findFirst.mockResolvedValue(null); // pas déjà attaché
+      tx.setupVersion.findFirst.mockResolvedValue({ versionNumber: 3 });
+      tx.setupVersion.create.mockResolvedValue({ id: 'version-4' });
+      prisma.setupVersion.findUniqueOrThrow.mockResolvedValue({
+        id: 'version-4',
+        versionNumber: 4,
+        changeNotes: 'Ajustement pluie',
+        createdAt: new Date(),
+        fileObject: {
+          id: 'f2',
+          originalName: 'wet.sto',
+          mimeType: 'application/octet-stream',
+          extension: '.sto',
+          sizeBytes: 12,
+          sha256: 'hash',
+          status: 'VALIDATED',
+        },
+      });
+
+      const result = await service.addVersion('u1', 'setup-1', {
+        fileId: 'f2',
+        changeNotes: 'Ajustement pluie',
+      });
+
+      expect(tx.setupVersion.create).toHaveBeenCalledWith({
+        data: {
+          setupId: 'setup-1',
+          versionNumber: 4,
+          fileObjectId: 'f2',
+          changeNotes: 'Ajustement pluie',
+        },
+      });
+      expect(tx.setup.update).toHaveBeenCalledWith({
+        where: { id: 'setup-1' },
+        data: { referenceVersionId: 'version-4' },
+      });
+      expect(result).toEqual(
+        expect.objectContaining({
+          versionNumber: 4,
+          isReference: true,
+          authorDisplayName: 'Owner',
+        }),
+      );
+    });
+  });
+
+  describe('listVersions', () => {
+    it('marque isReference sur la version correspondant à referenceVersionId', async () => {
+      prisma.setup.findFirst.mockResolvedValue({
+        referenceVersionId: 'version-2',
+        owner: { displayName: 'Owner' },
+      });
+      prisma.setupVersion.findMany.mockResolvedValue([
+        {
+          id: 'version-2',
+          versionNumber: 2,
+          changeNotes: null,
+          createdAt: new Date(),
+          fileObject: {
+            id: 'f2',
+            originalName: 'v2.sto',
+            mimeType: 'application/octet-stream',
+            extension: '.sto',
+            sizeBytes: 10,
+            sha256: 'h2',
+            status: 'VALIDATED',
+          },
+        },
+        {
+          id: 'version-1',
+          versionNumber: 1,
+          changeNotes: null,
+          createdAt: new Date(),
+          fileObject: {
+            id: 'f1',
+            originalName: 'v1.sto',
+            mimeType: 'application/octet-stream',
+            extension: '.sto',
+            sizeBytes: 9,
+            sha256: 'h1',
+            status: 'VALIDATED',
+          },
+        },
+      ]);
+
+      const result = await service.listVersions('u1', 'setup-1');
+
+      expect(result.find((v) => v.id === 'version-2')?.isReference).toBe(true);
+      expect(result.find((v) => v.id === 'version-1')?.isReference).toBe(false);
+      expect(result.every((v) => v.authorDisplayName === 'Owner')).toBe(true);
+    });
+  });
+
+  describe('setReferenceVersion', () => {
+    it("lève 404 si la version n'appartient pas au setup", async () => {
+      prisma.setup.findFirst.mockResolvedValueOnce({ id: 'setup-1' });
+      prisma.setupVersion.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.setReferenceVersion('u1', 'setup-1', 'not-a-version-of-this-setup'),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 });

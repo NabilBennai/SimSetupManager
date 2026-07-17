@@ -34,7 +34,14 @@ export interface PublicSetupVersionSummary {
   versionNumber: number;
   changeNotes: string | null;
   createdAt: string;
+  authorDisplayName: string;
+  isReference: boolean;
   file: PublicFileObject;
+}
+
+export interface AddSetupVersionPayload {
+  fileId: string;
+  changeNotes?: string;
 }
 
 export interface PublicSetup {
