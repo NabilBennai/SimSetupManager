@@ -1,6 +1,8 @@
 import { ExpressAdapter } from '@nestjs/platform-express';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
+import cookieParser from 'cookie-parser';
 import type { Express } from 'express';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
@@ -22,11 +24,17 @@ export async function createApp(expressInstance: Express): Promise<NestExpressAp
   );
 
   app.use(requestIdMiddleware);
+  app.use(cookieParser());
+  app.enableCors({
+    origin: process.env['APP_ORIGIN'] ?? 'http://localhost:4200',
+    credentials: true,
+  });
   app.useLogger(app.get(Logger));
   app.setGlobalPrefix('api/v1');
   mountSwaggerUi(app);
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new ResponseInterceptor());
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
   return app;
 }

@@ -7,10 +7,32 @@ generator client {
   output   = "../apps/api/src/infrastructure/database/generated"
 }
 
-// Modèle temporaire utilisé uniquement pour valider la chaîne
-// Prisma -> Turso (libSQL) pendant l'Epic 0. Le modèle de données réel
-// (docs/06-modele-de-donnees.md) sera introduit à partir de l'Epic 2.
-model HealthCheck {
+// SQLite (Turso) ne supporte pas les enums Prisma : role/status sont des
+// String dont les valeurs autorisées sont validées côté application
+// (voir apps/api/src/modules/users).
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  displayName  String
+  avatarUrl    String?
+  role         String    @default("MEMBER")
+  status       String    @default("ACTIVE")
+  preferences  String    @default("{}")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+  sessions     Session[]
+}
+
+model Session {
   id        String   @id @default(cuid())
-  checkedAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  userAgent String?
+
+  @@index([userId])
 }
