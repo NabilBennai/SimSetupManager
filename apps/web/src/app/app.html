@@ -10,6 +10,7 @@
     @if (authService.initializing()) {
       <span class="app-header__loading">Chargement…</span>
     } @else if (authService.isAuthenticated()) {
+      <a routerLink="/setups" routerLinkActive="is-active">Mes setups</a>
       <a routerLink="/profile" routerLinkActive="is-active">Mon profil</a>
     } @else {
       <a routerLink="/login" routerLinkActive="is-active">Connexion</a>

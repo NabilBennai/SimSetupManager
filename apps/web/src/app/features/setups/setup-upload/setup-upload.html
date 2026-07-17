@@ -1,0 +1,126 @@
+<section class="page-shell">
+  <article class="card card--wide">
+    <div class="card__kerb kerb-stripe" aria-hidden="true"></div>
+
+    <div class="card__body">
+      <div class="card__heading">
+        <span class="eyebrow">Nouveau setup</span>
+        <h1>Importer un setup</h1>
+        <p>Choisissez le jeu, la voiture, le circuit puis le fichier.</p>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <label>
+          Jeu
+          <select formControlName="gameId" (change)="onGameChange()">
+            <option value="" disabled>Choisir un jeu</option>
+            @for (game of games(); track game.id) {
+              <option [value]="game.id">{{ game.name }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          Voiture
+          <select formControlName="carId" [disabled]="cars().length === 0">
+            <option value="" disabled>Choisir une voiture</option>
+            @for (car of cars(); track car.id) {
+              <option [value]="car.id">{{ car.manufacturer }} {{ car.name }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          Circuit
+          <input
+            type="text"
+            placeholder="Rechercher un circuit…"
+            [value]="trackQuery()"
+            (input)="onTrackQueryChange($any($event.target).value)"
+          />
+        </label>
+        @if (trackResults().length > 0) {
+          <ul class="track-results">
+            @for (track of trackResults(); track track.id) {
+              <li>
+                <button type="button" (click)="selectTrack(track)">
+                  {{ track.name }}
+                  @if (track.layout) {
+                    — {{ track.layout }}
+                  }
+                </button>
+              </li>
+            }
+          </ul>
+        }
+
+        <label>
+          Titre
+          <input type="text" formControlName="title" placeholder="Ex. Course sèche, Q3 optimisé" />
+        </label>
+
+        <div class="form-row">
+          <label>
+            Type de session
+            <input type="text" formControlName="sessionType" placeholder="Course, Qualif…" />
+          </label>
+          <label>
+            Météo
+            <input type="text" formControlName="weather" placeholder="Sec, pluie…" />
+          </label>
+        </div>
+
+        <label>
+          Version du jeu
+          <input type="text" formControlName="gameVersion" />
+        </label>
+
+        <label>
+          Notes privées
+          <textarea formControlName="notesPrivate" rows="3"></textarea>
+        </label>
+
+        <label class="file-drop">
+          Fichier de setup
+          <input
+            type="file"
+            (change)="onFileSelected($event)"
+            [disabled]="!form.controls.gameId.value"
+          />
+        </label>
+
+        @if (uploadProgress(); as progress) {
+          <div class="progress">
+            <div class="progress__bar" [style.width.%]="progress"></div>
+          </div>
+          <p class="eyebrow">Envoi… {{ progress }}%</p>
+        }
+
+        @if (uploadError(); as message) {
+          <p class="error">
+            {{ message }}
+            <button class="btn btn--ghost" type="button" (click)="retryUpload()">Réessayer</button>
+          </p>
+        }
+
+        @if (uploadedFile(); as file) {
+          <p class="success">
+            Fichier envoyé : {{ file.originalName }} ({{ file.sizeBytes }} octets)
+          </p>
+        }
+
+        @if (error(); as err) {
+          <p class="error">{{ err.message }}</p>
+        }
+
+        <button class="btn btn--primary" type="submit" [disabled]="!canSubmit || submitting()">
+          @if (submitting()) {
+            Création…
+          } @else {
+            Créer le setup
+          }
+        </button>
+      </form>
+    </div>
+  </article>
+</section>

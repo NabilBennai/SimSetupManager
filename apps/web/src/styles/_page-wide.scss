@@ -1,0 +1,44 @@
+// Pages nécessitant plus de largeur que les cartes centrées (auth,
+// profil) : liste et détail de setups.
+.page-wide {
+  background: var(--color-asphalt);
+  min-height: calc(100vh - 66px);
+  padding: var(--space-8) var(--space-6);
+}
+
+.page-wide__container {
+  margin: 0 auto;
+  max-width: 72rem;
+}
+
+.page-wide__header {
+  align-items: flex-end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  justify-content: space-between;
+  margin-bottom: var(--space-6);
+}
+
+.page-wide__title {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.page-wide__actions {
+  align-items: center;
+  display: flex;
+  gap: var(--space-4);
+}
+
+.toggle {
+  align-items: center;
+  color: var(--color-muted);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  gap: var(--space-2);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
