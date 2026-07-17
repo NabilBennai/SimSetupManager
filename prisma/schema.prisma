@@ -123,8 +123,30 @@ model Setup {
   updatedAt          DateTime       @updatedAt
   deletedAt          DateTime?
   versions           SetupVersion[] @relation("SetupVersions")
+  tags               TagLink[]
 
   @@index([ownerId, isArchived, updatedAt])
+  @@index([ownerId, gameId])
+  @@index([ownerId, carId])
+  @@index([ownerId, trackId])
+}
+
+// Noms normalisés (trim + minuscules) pour éviter les quasi-doublons.
+model Tag {
+  id    String    @id @default(cuid())
+  name  String    @unique
+  links TagLink[]
+}
+
+model TagLink {
+  id      String @id @default(cuid())
+  setupId String
+  setup   Setup  @relation(fields: [setupId], references: [id], onDelete: Cascade)
+  tagId   String
+  tag     Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([setupId, tagId])
+  @@index([tagId])
 }
 
 model SetupVersion {

@@ -43,6 +43,16 @@
                   <dd>{{ version.file.originalName }} ({{ version.file.sizeBytes }} octets)</dd>
                 </div>
               }
+              @if (s.tags.length > 0) {
+                <div>
+                  <dt>Tags</dt>
+                  <dd>
+                    @for (tag of s.tags; track tag) {
+                      <span class="tag-chip">#{{ tag }}</span>
+                    }
+                  </dd>
+                </div>
+              }
             </dl>
 
             <div class="actions">
@@ -94,6 +104,11 @@
               <label>
                 Notes privées
                 <textarea formControlName="notesPrivate" rows="3"></textarea>
+              </label>
+
+              <label>
+                Tags (séparés par des virgules)
+                <input type="text" formControlName="tags" placeholder="endurance, pluie, qualif" />
               </label>
 
               <div class="actions">

@@ -6,6 +6,8 @@ describe('SetupsService', () => {
   const tx = {
     setup: { create: jest.fn(), update: jest.fn() },
     setupVersion: { create: jest.fn() },
+    tag: { upsert: jest.fn() },
+    tagLink: { deleteMany: jest.fn(), createMany: jest.fn() },
   };
   const prisma = {
     game: { findUnique: jest.fn() },
@@ -110,6 +112,7 @@ describe('SetupsService', () => {
         game: { name: 'Game' },
         car: { name: 'Car' },
         track: { name: 'Track' },
+        tags: [],
         referenceVersion: null,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -131,6 +134,112 @@ describe('SetupsService', () => {
         where: { id: 'setup-1' },
         data: { referenceVersionId: 'version-1' },
       });
+    });
+
+    it('normalise les tags (trim, minuscules, dédoublonnage) avant de les attacher', async () => {
+      prisma.game.findUnique.mockResolvedValue(game);
+      prisma.car.findUnique.mockResolvedValue(car);
+      prisma.track.findUnique.mockResolvedValue(track);
+      prisma.fileObject.findUnique.mockResolvedValue(file);
+      prisma.setupVersion.findFirst.mockResolvedValue(null);
+      tx.setup.create.mockResolvedValue({ id: 'setup-1' });
+      tx.setupVersion.create.mockResolvedValue({ id: 'version-1' });
+      tx.tag.upsert.mockImplementation(({ where }: { where: { name: string } }) =>
+        Promise.resolve({ id: `tag-${where.name}` }),
+      );
+      prisma.setup.findFirst.mockResolvedValue({
+        id: 'setup-1',
+        ownerId: 'u1',
+        title: 'Test',
+        descriptionPublic: null,
+        notesPrivate: null,
+        visibility: 'PRIVATE',
+        sessionType: null,
+        weather: null,
+        trackTemperatureC: null,
+        airTemperatureC: null,
+        gameVersion: null,
+        isArchived: false,
+        gameId: 'g1',
+        carId: 'c1',
+        trackId: 't1',
+        game: { name: 'Game' },
+        car: { name: 'Car' },
+        track: { name: 'Track' },
+        tags: [],
+        referenceVersion: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      await service.create('u1', {
+        title: 'Test',
+        gameId: 'g1',
+        carId: 'c1',
+        trackId: 't1',
+        fileId: 'f1',
+        tags: [' Endurance ', 'endurance', 'Qualif'],
+      });
+
+      expect(tx.tagLink.deleteMany).toHaveBeenCalledWith({ where: { setupId: 'setup-1' } });
+      expect(tx.tag.upsert).toHaveBeenCalledTimes(2);
+      expect(tx.tag.upsert).toHaveBeenCalledWith({
+        where: { name: 'endurance' },
+        create: { name: 'endurance' },
+        update: {},
+      });
+      expect(tx.tag.upsert).toHaveBeenCalledWith({
+        where: { name: 'qualif' },
+        create: { name: 'qualif' },
+        update: {},
+      });
+      expect(tx.tagLink.createMany).toHaveBeenCalledWith({
+        data: [
+          { setupId: 'setup-1', tagId: 'tag-endurance' },
+          { setupId: 'setup-1', tagId: 'tag-qualif' },
+        ],
+      });
+    });
+  });
+
+  describe('listForOwner', () => {
+    it('combine recherche texte, filtres et tri dans la requête Prisma', async () => {
+      prisma.setup.findMany.mockResolvedValue([]);
+      prisma.setup.count.mockResolvedValue(0);
+
+      await service.listForOwner('u1', {
+        page: 2,
+        pageSize: 10,
+        includeArchived: false,
+        search: 'Monza',
+        gameId: 'g1',
+        carId: 'c1',
+        trackId: 't1',
+        sortBy: 'createdAt',
+        sortOrder: 'asc',
+      });
+
+      expect(prisma.setup.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            ownerId: 'u1',
+            deletedAt: null,
+            isArchived: false,
+            gameId: 'g1',
+            carId: 'c1',
+            trackId: 't1',
+            OR: [
+              { title: { contains: 'Monza' } },
+              { car: { name: { contains: 'Monza' } } },
+              { track: { name: { contains: 'Monza' } } },
+              { tags: { some: { tag: { name: { contains: 'monza' } } } } },
+            ],
+          },
+          orderBy: { createdAt: 'asc' },
+          skip: 10,
+          take: 10,
+        }),
+      );
     });
   });
 

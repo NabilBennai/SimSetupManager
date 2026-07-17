@@ -5,6 +5,7 @@ import type {
   ApiSuccessResponse,
   CreateSetupPayload,
   DownloadUrlResponse,
+  ListSetupsQuery,
   PrepareUploadPayload,
   PrepareUploadResponse,
   PublicFileObject,
@@ -20,15 +21,20 @@ import { API_BASE_URL } from '../http/api-base-url';
 export class SetupsService {
   private readonly http = inject(HttpClient);
 
-  listSetups(
-    page: number,
-    pageSize: number,
-    includeArchived: boolean,
-  ): Promise<ApiPaginatedResponse<PublicSetupSummary>> {
+  listSetups(query: ListSetupsQuery): Promise<ApiPaginatedResponse<PublicSetupSummary>> {
+    const params: Record<string, string | number | boolean> = {};
+    if (query.page !== undefined) params['page'] = query.page;
+    if (query.pageSize !== undefined) params['pageSize'] = query.pageSize;
+    if (query.includeArchived !== undefined) params['includeArchived'] = query.includeArchived;
+    if (query.search) params['search'] = query.search;
+    if (query.gameId) params['gameId'] = query.gameId;
+    if (query.carId) params['carId'] = query.carId;
+    if (query.trackId) params['trackId'] = query.trackId;
+    if (query.sortBy) params['sortBy'] = query.sortBy;
+    if (query.sortOrder) params['sortOrder'] = query.sortOrder;
+
     return firstValueFrom(
-      this.http.get<ApiPaginatedResponse<PublicSetupSummary>>(`${API_BASE_URL}/setups`, {
-        params: { page, pageSize, includeArchived },
-      }),
+      this.http.get<ApiPaginatedResponse<PublicSetupSummary>>(`${API_BASE_URL}/setups`, { params }),
     );
   }
 

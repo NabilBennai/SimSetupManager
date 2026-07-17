@@ -36,6 +36,7 @@ export class SetupDetail {
     gameVersion: [''],
     descriptionPublic: [''],
     notesPrivate: [''],
+    tags: [''],
   });
 
   constructor() {
@@ -55,6 +56,7 @@ export class SetupDetail {
         gameVersion: setup.gameVersion ?? '',
         descriptionPublic: setup.descriptionPublic ?? '',
         notesPrivate: setup.notesPrivate ?? '',
+        tags: setup.tags.join(', '),
       });
     } catch {
       // le message est déjà exposé via ErrorNotificationService (apiErrorInterceptor)
@@ -78,6 +80,7 @@ export class SetupDetail {
         gameVersion: setup.gameVersion ?? '',
         descriptionPublic: setup.descriptionPublic ?? '',
         notesPrivate: setup.notesPrivate ?? '',
+        tags: setup.tags.join(', '),
       });
     }
   }
@@ -99,6 +102,10 @@ export class SetupDetail {
         gameVersion: values.gameVersion || undefined,
         descriptionPublic: values.descriptionPublic || undefined,
         notesPrivate: values.notesPrivate || undefined,
+        tags: values.tags
+          .split(',')
+          .map((tag) => tag.trim())
+          .filter((tag) => tag.length > 0),
       });
       this.setup.set(updated);
       this.editing.set(false);

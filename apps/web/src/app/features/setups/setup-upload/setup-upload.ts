@@ -52,6 +52,7 @@ export class SetupUpload {
     gameVersion: [''],
     descriptionPublic: [''],
     notesPrivate: [''],
+    tags: [''],
   });
 
   constructor() {
@@ -132,6 +133,13 @@ export class SetupUpload {
     }
   }
 
+  private parseTags(raw: string): string[] {
+    return raw
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.length > 0);
+  }
+
   get canSubmit(): boolean {
     return this.form.valid && this.selectedTrack() !== null && this.uploadedFile() !== null;
   }
@@ -160,6 +168,7 @@ export class SetupUpload {
         gameVersion,
         descriptionPublic,
         notesPrivate,
+        tags,
       } = this.form.getRawValue();
       const setup = await this.setupsService.createSetup({
         gameId,
@@ -172,6 +181,7 @@ export class SetupUpload {
         gameVersion: gameVersion || undefined,
         descriptionPublic: descriptionPublic || undefined,
         notesPrivate: notesPrivate || undefined,
+        tags: this.parseTags(tags),
       });
       await this.router.navigate(['/setups', setup.id]);
     } catch {

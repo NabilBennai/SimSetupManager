@@ -84,3 +84,10 @@ form {
   flex-wrap: wrap;
   gap: var(--space-3);
 }
+
+.tag-chip {
+  color: var(--color-purple);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  margin-right: var(--space-2);
+}

@@ -15,6 +15,75 @@
       </div>
     </header>
 
+    <form class="filters" (ngSubmit)="onSearchSubmit()">
+      <input
+        type="search"
+        placeholder="Rechercher un titre, une voiture, un circuit, un tag…"
+        [(ngModel)]="searchInput"
+        name="search"
+      />
+
+      <select [ngModel]="gameId()" name="gameId" (ngModelChange)="onGameFilterChange($event)">
+        <option value="">Tous les jeux</option>
+        @for (game of games(); track game.id) {
+          <option [value]="game.id">{{ game.name }}</option>
+        }
+      </select>
+
+      <select
+        [ngModel]="carId()"
+        name="carId"
+        [disabled]="cars().length === 0"
+        (ngModelChange)="onCarFilterChange($event)"
+      >
+        <option value="">Toutes les voitures</option>
+        @for (car of cars(); track car.id) {
+          <option [value]="car.id">{{ car.manufacturer }} {{ car.name }}</option>
+        }
+      </select>
+
+      <div class="track-filter">
+        <input
+          type="text"
+          placeholder="Filtrer par circuit…"
+          [(ngModel)]="trackQuery"
+          name="trackQuery"
+          (ngModelChange)="onTrackQueryChange($event)"
+        />
+        @if (trackId()) {
+          <button class="btn btn--ghost" type="button" (click)="clearTrackFilter()">×</button>
+        }
+        @if (trackResults().length > 0) {
+          <ul class="track-results">
+            @for (track of trackResults(); track track.id) {
+              <li>
+                <button type="button" (click)="selectTrackFilter(track)">
+                  {{ track.name }}
+                  @if (track.layout) {
+                    — {{ track.layout }}
+                  }
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+      <select
+        [ngModel]="sortBy() + ':' + sortOrder()"
+        name="sort"
+        (ngModelChange)="onSortChange($event)"
+      >
+        <option value="updatedAt:desc">Plus récemment modifiés</option>
+        <option value="updatedAt:asc">Moins récemment modifiés</option>
+        <option value="createdAt:desc">Plus récemment créés</option>
+        <option value="createdAt:asc">Plus anciens</option>
+      </select>
+
+      <button class="btn btn--primary" type="submit">Rechercher</button>
+      <button class="btn btn--ghost" type="button" (click)="clearFilters()">Réinitialiser</button>
+    </form>
+
     @if (error(); as err) {
       <p class="error">{{ err.message }}</p>
     }
@@ -23,8 +92,8 @@
       <p class="eyebrow">Chargement…</p>
     } @else if (setups().length === 0) {
       <div class="empty-state">
-        <p>Aucun setup pour l'instant.</p>
-        <a class="btn btn--primary" routerLink="/setups/new">Importer votre premier setup</a>
+        <p>Aucun setup ne correspond à ces critères.</p>
+        <a class="btn btn--primary" routerLink="/setups/new">Importer un setup</a>
       </div>
     } @else {
       <div class="setup-rows">
@@ -40,6 +109,9 @@
                 <span>{{ setup.gameName }}</span>
                 <span>{{ setup.carName }}</span>
                 <span>{{ setup.trackName }}</span>
+                @for (tag of setup.tags; track tag) {
+                  <span class="tag-chip">#{{ tag }}</span>
+                }
               </div>
             </div>
             <span class="setup-row__updated">{{ setup.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</span>

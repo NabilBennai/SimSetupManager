@@ -1,5 +1,20 @@
 import type { PublicFileObject } from './uploads';
 
+export type SetupSortBy = 'updatedAt' | 'createdAt';
+export type SortOrder = 'asc' | 'desc';
+
+export interface ListSetupsQuery {
+  page?: number;
+  pageSize?: number;
+  includeArchived?: boolean;
+  search?: string;
+  gameId?: string;
+  carId?: string;
+  trackId?: string;
+  sortBy?: SetupSortBy;
+  sortOrder?: SortOrder;
+}
+
 export interface PublicSetupSummary {
   id: string;
   title: string;
@@ -9,6 +24,7 @@ export interface PublicSetupSummary {
   carName: string;
   trackId: string;
   trackName: string;
+  tags: string[];
   isArchived: boolean;
   updatedAt: string;
 }
@@ -40,6 +56,7 @@ export interface PublicSetup {
   carName: string;
   trackId: string;
   trackName: string;
+  tags: string[];
   referenceVersion: PublicSetupVersionSummary | null;
   createdAt: string;
   updatedAt: string;
@@ -58,6 +75,7 @@ export interface CreateSetupPayload {
   trackTemperatureC?: number;
   airTemperatureC?: number;
   gameVersion?: string;
+  tags?: string[];
 }
 
 export interface UpdateSetupPayload {
@@ -69,6 +87,7 @@ export interface UpdateSetupPayload {
   trackTemperatureC?: number;
   airTemperatureC?: number;
   gameVersion?: string;
+  tags?: string[];
 }
 
 export interface DownloadUrlResponse {

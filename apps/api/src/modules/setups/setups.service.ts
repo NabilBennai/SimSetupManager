@@ -11,23 +11,40 @@ import type {
 
 import { toPublicFileObject } from '../uploads/file-object.mapper';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
+import type { Prisma } from '../../infrastructure/database/generated/client';
 import {
   STORAGE_PROVIDER,
   type StorageProvider,
 } from '../../infrastructure/storage/storage-provider';
 import type { ListSetupsQueryDto } from './dto/list-setups-query.dto';
 
+type TransactionClient = Prisma.TransactionClient;
+
 const DEFAULT_DOWNLOAD_URL_TTL_MS = 5 * 60 * 1000;
+const MAX_TAGS = 10;
+const MAX_TAG_LENGTH = 30;
 
 function downloadUrlTtlMs(): number {
   const value = Number(process.env['DOWNLOAD_URL_TTL_MS']);
   return Number.isFinite(value) && value > 0 ? value : DEFAULT_DOWNLOAD_URL_TTL_MS;
 }
 
+/** trim + minuscules + dédoublonnage — évite les quasi-doublons de tags. */
+function normalizeTags(tags: string[] | undefined): string[] {
+  if (!tags) {
+    return [];
+  }
+  const normalized = tags
+    .map((tag) => tag.trim().toLowerCase())
+    .filter((tag) => tag.length > 0 && tag.length <= MAX_TAG_LENGTH);
+  return Array.from(new Set(normalized)).slice(0, MAX_TAGS);
+}
+
 const summaryInclude = {
   game: { select: { name: true } },
   car: { select: { name: true } },
   track: { select: { name: true } },
+  tags: { include: { tag: { select: { name: true } } } },
 } as const;
 
 const detailInclude = {
@@ -46,6 +63,7 @@ type SetupWithSummaryRelations = {
   game: { name: string };
   car: { name: string };
   track: { name: string };
+  tags: { tag: { name: string } }[];
 };
 
 type SetupWithDetailRelations = SetupWithSummaryRelations & {
@@ -115,6 +133,8 @@ export class SetupsService {
       throw new NotFoundException('Ce fichier est déjà attaché à un setup.');
     }
 
+    const tagNames = normalizeTags(payload.tags);
+
     const setupId = await this.prisma.$transaction(async (tx) => {
       const setup = await tx.setup.create({
         data: {
@@ -142,6 +162,8 @@ export class SetupsService {
         data: { referenceVersionId: version.id },
       });
 
+      await this.replaceTags(tx, setup.id, tagNames);
+
       return setup.id;
     });
 
@@ -152,17 +174,32 @@ export class SetupsService {
     userId: string,
     query: ListSetupsQueryDto,
   ): Promise<Paginated<PublicSetupSummary>> {
+    const search = query.search?.trim();
+
     const where = {
       ownerId: userId,
       deletedAt: null,
       ...(query.includeArchived ? {} : { isArchived: false }),
+      ...(query.gameId ? { gameId: query.gameId } : {}),
+      ...(query.carId ? { carId: query.carId } : {}),
+      ...(query.trackId ? { trackId: query.trackId } : {}),
+      ...(search
+        ? {
+            OR: [
+              { title: { contains: search } },
+              { car: { name: { contains: search } } },
+              { track: { name: { contains: search } } },
+              { tags: { some: { tag: { name: { contains: search.toLowerCase() } } } } },
+            ],
+          }
+        : {}),
     };
 
     const [items, total] = await Promise.all([
       this.prisma.setup.findMany({
         where,
         include: summaryInclude,
-        orderBy: { updatedAt: 'desc' },
+        orderBy: { [query.sortBy]: query.sortOrder },
         skip: (query.page - 1) * query.pageSize,
         take: query.pageSize,
       }),
@@ -185,24 +222,30 @@ export class SetupsService {
   async update(userId: string, setupId: string, payload: UpdateSetupPayload): Promise<PublicSetup> {
     await this.findOwnedOrThrow(userId, setupId, {});
 
-    await this.prisma.setup.update({
-      where: { id: setupId },
-      data: {
-        ...(payload.title !== undefined ? { title: payload.title } : {}),
-        ...(payload.descriptionPublic !== undefined
-          ? { descriptionPublic: payload.descriptionPublic }
-          : {}),
-        ...(payload.notesPrivate !== undefined ? { notesPrivate: payload.notesPrivate } : {}),
-        ...(payload.sessionType !== undefined ? { sessionType: payload.sessionType } : {}),
-        ...(payload.weather !== undefined ? { weather: payload.weather } : {}),
-        ...(payload.trackTemperatureC !== undefined
-          ? { trackTemperatureC: payload.trackTemperatureC }
-          : {}),
-        ...(payload.airTemperatureC !== undefined
-          ? { airTemperatureC: payload.airTemperatureC }
-          : {}),
-        ...(payload.gameVersion !== undefined ? { gameVersion: payload.gameVersion } : {}),
-      },
+    await this.prisma.$transaction(async (tx) => {
+      await tx.setup.update({
+        where: { id: setupId },
+        data: {
+          ...(payload.title !== undefined ? { title: payload.title } : {}),
+          ...(payload.descriptionPublic !== undefined
+            ? { descriptionPublic: payload.descriptionPublic }
+            : {}),
+          ...(payload.notesPrivate !== undefined ? { notesPrivate: payload.notesPrivate } : {}),
+          ...(payload.sessionType !== undefined ? { sessionType: payload.sessionType } : {}),
+          ...(payload.weather !== undefined ? { weather: payload.weather } : {}),
+          ...(payload.trackTemperatureC !== undefined
+            ? { trackTemperatureC: payload.trackTemperatureC }
+            : {}),
+          ...(payload.airTemperatureC !== undefined
+            ? { airTemperatureC: payload.airTemperatureC }
+            : {}),
+          ...(payload.gameVersion !== undefined ? { gameVersion: payload.gameVersion } : {}),
+        },
+      });
+
+      if (payload.tags !== undefined) {
+        await this.replaceTags(tx, setupId, normalizeTags(payload.tags));
+      }
     });
 
     return this.getForOwner(userId, setupId);
@@ -239,6 +282,27 @@ export class SetupsService {
     };
   }
 
+  /** Upsert des tags par nom puis remplacement complet des liens du setup. */
+  private async replaceTags(
+    tx: TransactionClient,
+    setupId: string,
+    tagNames: string[],
+  ): Promise<void> {
+    await tx.tagLink.deleteMany({ where: { setupId } });
+
+    if (tagNames.length === 0) {
+      return;
+    }
+
+    const tagIds = await Promise.all(
+      tagNames.map((name) => tx.tag.upsert({ where: { name }, create: { name }, update: {} })),
+    );
+
+    await tx.tagLink.createMany({
+      data: tagIds.map((tag) => ({ setupId, tagId: tag.id })),
+    });
+  }
+
   /**
    * 404 uniforme (jamais 403) que le setup n'existe pas ou n'appartienne
    * pas à l'appelant : ne jamais révéler l'existence d'un setup à un
@@ -269,6 +333,7 @@ export class SetupsService {
       carName: setup.car.name,
       trackId: setup.trackId,
       trackName: setup.track.name,
+      tags: setup.tags.map((link) => link.tag.name),
       isArchived: setup.isArchived,
       updatedAt: setup.updatedAt.toISOString(),
     };
@@ -294,6 +359,7 @@ export class SetupsService {
       carName: setup.car.name,
       trackId: setup.trackId,
       trackName: setup.track.name,
+      tags: setup.tags.map((link) => link.tag.name),
       referenceVersion: setup.referenceVersion
         ? this.toPublicVersion(setup.referenceVersion)
         : null,
