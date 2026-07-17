@@ -36,3 +36,56 @@ model Session {
 
   @@index([userId])
 }
+
+// SQLite n'a pas de type array natif : supportedExtensions est un JSON
+// sérialisé (voir apps/api/src/modules/references).
+model Game {
+  id                  String   @id @default(cuid())
+  slug                String   @unique
+  name                String
+  isActive            Boolean  @default(true)
+  supportedExtensions String   @default("[]")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  categories CarCategory[]
+  cars       Car[]
+}
+
+model CarCategory {
+  id     String @id @default(cuid())
+  gameId String
+  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  name   String
+
+  cars Car[]
+
+  @@unique([gameId, name])
+}
+
+model Car {
+  id           String       @id @default(cuid())
+  gameId       String
+  game         Game         @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  categoryId   String?
+  category     CarCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  slug         String
+  manufacturer String
+  name         String
+  isActive     Boolean      @default(true)
+
+  @@unique([gameId, slug])
+  @@index([gameId, isActive])
+  @@index([categoryId])
+}
+
+model Track {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  name        String
+  layout      String?
+  countryCode String
+  isActive    Boolean @default(true)
+
+  @@index([name])
+}
