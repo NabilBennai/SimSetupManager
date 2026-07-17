@@ -4,6 +4,10 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { createApp } from './../src/create-app';
 
+// Jest isole son environnement du .env chargé par main.ts ; ce test n'a
+// besoin que d'une connexion locale valide, pas des variables réelles.
+process.env['DATABASE_URL'] ??= 'file:./prisma/local.db';
+
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
 
