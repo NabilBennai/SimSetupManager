@@ -1,0 +1,32 @@
+<section class="profile-page">
+  <h1>Mon profil</h1>
+
+  @if (authService.currentUser(); as user) {
+    <p>Email : {{ user.email }}</p>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <label>
+        Pseudonyme
+        <input type="text" formControlName="displayName" autocomplete="nickname" />
+      </label>
+
+      @if (error(); as err) {
+        <p class="error">{{ err.message }}</p>
+      }
+
+      @if (saved()) {
+        <p class="success">Profil mis à jour.</p>
+      }
+
+      <button type="submit" [disabled]="saving()">
+        @if (saving()) {
+          Enregistrement…
+        } @else {
+          Enregistrer
+        }
+      </button>
+    </form>
+
+    <button type="button" (click)="onLogout()">Se déconnecter</button>
+  }
+</section>
