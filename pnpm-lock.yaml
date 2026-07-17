@@ -44,6 +44,9 @@ importers:
       '@prisma/client-runtime-utils':
         specifier: 7.8.0
         version: 7.8.0
+      '@sim-setup-manager/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       express:
         specifier: 5.2.1
         version: 5.2.1
@@ -132,6 +135,9 @@ importers:
       '@angular/router':
         specifier: ^22.0.0
         version: 22.0.7(@angular/common@22.0.7(@angular/core@22.0.7(@angular/compiler@22.0.7)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.0.7(@angular/compiler@22.0.7)(rxjs@7.8.2))(@angular/platform-browser@22.0.7(@angular/common@22.0.7(@angular/core@22.0.7(@angular/compiler@22.0.7)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.0.7(@angular/compiler@22.0.7)(rxjs@7.8.2)))(rxjs@7.8.2)
+      '@sim-setup-manager/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       rxjs:
         specifier: ~7.8.0
         version: 7.8.2
@@ -195,6 +201,15 @@ importers:
         version: 8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)
 
   packages/config-typescript: {}
+
+  packages/contracts:
+    devDependencies:
+      '@sim-setup-manager/config-typescript':
+        specifier: workspace:*
+        version: link:../config-typescript
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
 
 packages:
 

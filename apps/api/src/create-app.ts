@@ -3,6 +3,9 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { NestFactory } from '@nestjs/core';
 import type { Express } from 'express';
 import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import { requestIdMiddleware } from './common/middleware/request-id.middleware';
 
 /**
  * Point de création unique de l'application Nest, partagé entre le serveur
@@ -14,5 +17,10 @@ export async function createApp(expressInstance: Express): Promise<NestExpressAp
     AppModule,
     new ExpressAdapter(expressInstance),
   );
+
+  app.use(requestIdMiddleware);
+  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalInterceptors(new ResponseInterceptor());
+
   return app;
 }

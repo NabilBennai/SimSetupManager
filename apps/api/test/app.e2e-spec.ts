@@ -1,23 +1,27 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import express from 'express';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { AppModule } from './../src/app.module';
+import { createApp } from './../src/create-app';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
 
   beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
+    app = await createApp(express());
     await app.init();
   });
 
-  it('/ (GET)', () => {
-    return request(app.getHttpServer()).get('/').expect(200).expect('Hello World!');
+  it('/ (GET) enveloppe la réponse avec data et meta.requestId', () => {
+    return request(app.getHttpServer())
+      .get('/')
+      .expect(200)
+      .expect((res: { body: unknown }) => {
+        const body = res.body as { data: string; meta: { requestId: string } };
+        expect(body.data).toBe('Hello World!');
+        expect(typeof body.meta.requestId).toBe('string');
+        expect(body.meta.requestId.length).toBeGreaterThan(0);
+      });
   });
 
   afterEach(async () => {
