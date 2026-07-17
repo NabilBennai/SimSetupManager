@@ -1,14 +1,19 @@
-<header class="app-header">
-  <a routerLink="/">Sim Setup Manager</a>
+<div class="kerb-stripe" aria-hidden="true"></div>
 
-  <nav>
+<header class="app-header">
+  <a class="app-header__brand" routerLink="/">
+    <span class="app-header__wordmark">Apex<em>Setup</em></span>
+    <span class="eyebrow">Pit Wall</span>
+  </a>
+
+  <nav class="app-header__nav">
     @if (authService.initializing()) {
-      <span>Chargement…</span>
+      <span class="app-header__loading">Chargement…</span>
     } @else if (authService.isAuthenticated()) {
-      <a routerLink="/profile">Mon profil</a>
+      <a routerLink="/profile" routerLinkActive="is-active">Mon profil</a>
     } @else {
-      <a routerLink="/login">Connexion</a>
-      <a routerLink="/register">Créer un compte</a>
+      <a routerLink="/login" routerLinkActive="is-active">Connexion</a>
+      <a routerLink="/register" routerLinkActive="is-active">Créer un compte</a>
     }
   </nav>
 </header>

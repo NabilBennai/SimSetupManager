@@ -1,1 +1,246 @@
-/* You can add global styles to this file, and also import other style files */
+@use '@fontsource/titillium-web/400.css' as *;
+@use '@fontsource/titillium-web/600.css' as *;
+@use '@fontsource/titillium-web/700.css' as *;
+@use '@fontsource/titillium-web/900.css' as *;
+@use '@fontsource/ibm-plex-sans/400.css' as *;
+@use '@fontsource/ibm-plex-sans/500.css' as *;
+@use '@fontsource/ibm-plex-sans/600.css' as *;
+@use '@fontsource/ibm-plex-mono/400.css' as *;
+@use '@fontsource/ibm-plex-mono/500.css' as *;
+
+/**
+ * Pit Wall — tokens de design.
+ * Le violet (#9645FF) est la couleur officielle du "meilleur secteur" sur les
+ * écrans de chronométrage (F1, iRacing…) : c'est le seul accent interactif.
+ * Le kerb stripe (rouge/blanc, vibreurs d'apex) est réservé aux marqueurs
+ * structurels — jamais un état interactif — pour que les deux motifs ne se
+ * concurrencent pas.
+ */
+:root {
+  --color-asphalt: #12141a;
+  --color-panel: #1b1e27;
+  --color-panel-raised: #232735;
+  --color-border: #2f3444;
+
+  --color-purple: #9645ff;
+  --color-purple-dim: #5b3899;
+  --color-purple-glow: rgb(150 69 255 / 35%);
+
+  --color-green: #34c77b;
+  --color-red: #e13b3b;
+
+  --color-paper: #f1eee8;
+  --color-muted: #9195a8;
+
+  --font-display: 'Titillium Web', system-ui, sans-serif;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--color-asphalt);
+  color: var(--color-paper);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+h1 {
+  font-size: 1.75rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+}
+
+p {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+a {
+  color: var(--color-purple);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+/* Repère visuel discret et cohérent sur toute l'app : le clavier ne doit
+   jamais perdre le focus, et le violet reste le seul signal interactif. */
+:focus-visible {
+  outline: 2px solid var(--color-purple);
+  outline-offset: 2px;
+}
+
+button {
+  font-family: var(--font-body);
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+input {
+  background: var(--color-panel-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-paper);
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  padding: var(--space-3);
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+
+  &:focus-visible {
+    border-color: var(--color-purple);
+    box-shadow: 0 0 0 3px var(--color-purple-glow);
+  }
+}
+
+.btn {
+  align-items: center;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 700;
+  gap: var(--space-2);
+  justify-content: center;
+  letter-spacing: 0.05em;
+  padding: var(--space-3) var(--space-6);
+  text-transform: uppercase;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+.btn--primary {
+  background: var(--color-purple);
+  color: var(--color-asphalt);
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 4px 20px var(--color-purple-glow);
+    transform: translateY(-1px);
+  }
+}
+
+.btn--ghost {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-muted);
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-red);
+    color: var(--color-red);
+  }
+}
+
+.eyebrow {
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.error {
+  color: var(--color-red);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+.success {
+  color: var(--color-green);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+/**
+ * Signature : le kerb stripe, motif des vibreurs d'apex. Marqueur
+ * structurel uniquement (haut de carte, bandeau de header) — jamais un
+ * état interactif.
+ */
+.kerb-stripe {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--color-red) 0,
+    var(--color-red) 10px,
+    var(--color-paper) 10px,
+    var(--color-paper) 20px
+  );
+  background-size: 200% 100%;
+  height: 6px;
+  animation: kerb-sweep 14s linear infinite;
+}
+
+@keyframes kerb-sweep {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: -160px 0;
+  }
+}

@@ -1,0 +1,39 @@
+// Spécifique à la page profil : la "fiche pilote".
+.driver-info {
+  align-items: center;
+  display: flex;
+  gap: var(--space-4);
+
+  &__meta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  &__email {
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+  }
+}
+
+.driver-roundel {
+  align-items: center;
+  background: var(--color-purple);
+  border-radius: 50%;
+  color: var(--color-asphalt);
+  display: flex;
+  flex-shrink: 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 900;
+  height: 3.5rem;
+  justify-content: center;
+  width: 3.5rem;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 0;
+}

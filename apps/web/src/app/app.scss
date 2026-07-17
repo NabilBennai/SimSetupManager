@@ -1,0 +1,72 @@
+.app-header {
+  align-items: center;
+  background: var(--color-panel);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-6);
+
+  &__brand {
+    align-items: baseline;
+    color: var(--color-paper);
+    display: inline-flex;
+    gap: var(--space-3);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: none;
+    }
+  }
+
+  &__wordmark {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+
+    em {
+      color: var(--color-purple);
+      font-style: normal;
+    }
+  }
+
+  &__nav {
+    display: flex;
+    gap: var(--space-6);
+
+    a {
+      border-bottom: 2px solid transparent;
+      color: var(--color-muted);
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      letter-spacing: 0.06em;
+      padding-bottom: var(--space-1);
+      text-decoration: none;
+      text-transform: uppercase;
+      transition:
+        color 150ms ease,
+        border-color 150ms ease;
+
+      &:hover,
+      &.is-active {
+        border-color: var(--color-purple);
+        color: var(--color-paper);
+      }
+    }
+  }
+
+  &__loading {
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+}
+
+main {
+  min-height: calc(100vh - 65px);
+}

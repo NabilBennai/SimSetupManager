@@ -1,34 +1,44 @@
-<section class="auth-page">
-  <h1>Créer un compte</h1>
+<section class="page-shell">
+  <article class="card">
+    <div class="card__kerb kerb-stripe" aria-hidden="true"></div>
 
-  <form [formGroup]="form" (ngSubmit)="onSubmit()">
-    <label>
-      Pseudonyme
-      <input type="text" formControlName="displayName" autocomplete="nickname" />
-    </label>
+    <div class="card__body">
+      <div class="card__heading">
+        <span class="eyebrow">Nouveau pilote</span>
+        <h1>Créer un compte</h1>
+        <p>Rejoignez le paddock.</p>
+      </div>
 
-    <label>
-      Email
-      <input type="email" formControlName="email" autocomplete="email" />
-    </label>
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <label>
+          Pseudonyme
+          <input type="text" formControlName="displayName" autocomplete="nickname" />
+        </label>
 
-    <label>
-      Mot de passe (8 caractères minimum)
-      <input type="password" formControlName="password" autocomplete="new-password" />
-    </label>
+        <label>
+          Email
+          <input type="email" formControlName="email" autocomplete="email" />
+        </label>
 
-    @if (error(); as err) {
-      <p class="error">{{ err.message }}</p>
-    }
+        <label>
+          Mot de passe (8 caractères minimum)
+          <input type="password" formControlName="password" autocomplete="new-password" />
+        </label>
 
-    <button type="submit" [disabled]="submitting()">
-      @if (submitting()) {
-        Création…
-      } @else {
-        Créer mon compte
-      }
-    </button>
-  </form>
+        @if (error(); as err) {
+          <p class="error">{{ err.message }}</p>
+        }
 
-  <p><a routerLink="/login">J'ai déjà un compte</a></p>
+        <button class="btn btn--primary" type="submit" [disabled]="submitting()">
+          @if (submitting()) {
+            Création…
+          } @else {
+            Créer mon compte
+          }
+        </button>
+      </form>
+
+      <p class="card__footer">Déjà un compte ? <a routerLink="/login">Se connecter</a></p>
+    </div>
+  </article>
 </section>

@@ -1,32 +1,50 @@
-<section class="profile-page">
-  <h1>Mon profil</h1>
+<section class="page-shell">
+  <article class="card">
+    <div class="card__kerb kerb-stripe" aria-hidden="true"></div>
 
-  @if (authService.currentUser(); as user) {
-    <p>Email : {{ user.email }}</p>
+    <div class="card__body">
+      @if (authService.currentUser(); as user) {
+        <div class="card__heading">
+          <span class="eyebrow">Fiche pilote</span>
+        </div>
 
-    <form [formGroup]="form" (ngSubmit)="onSubmit()">
-      <label>
-        Pseudonyme
-        <input type="text" formControlName="displayName" autocomplete="nickname" />
-      </label>
+        <div class="driver-info">
+          <div class="driver-roundel">{{ initials() }}</div>
+          <div class="driver-info__meta">
+            <h1>{{ user.displayName }}</h1>
+            <span class="driver-info__email">{{ user.email }}</span>
+          </div>
+        </div>
 
-      @if (error(); as err) {
-        <p class="error">{{ err.message }}</p>
+        <hr class="divider" />
+
+        <form [formGroup]="form" (ngSubmit)="onSubmit()">
+          <label>
+            Pseudonyme
+            <input type="text" formControlName="displayName" autocomplete="nickname" />
+          </label>
+
+          @if (error(); as err) {
+            <p class="error">{{ err.message }}</p>
+          }
+
+          @if (saved()) {
+            <p class="success">Profil mis à jour.</p>
+          }
+
+          <button class="btn btn--primary" type="submit" [disabled]="saving()">
+            @if (saving()) {
+              Enregistrement…
+            } @else {
+              Enregistrer
+            }
+          </button>
+        </form>
+
+        <hr class="divider" />
+
+        <button class="btn btn--ghost" type="button" (click)="onLogout()">Se déconnecter</button>
       }
-
-      @if (saved()) {
-        <p class="success">Profil mis à jour.</p>
-      }
-
-      <button type="submit" [disabled]="saving()">
-        @if (saving()) {
-          Enregistrement…
-        } @else {
-          Enregistrer
-        }
-      </button>
-    </form>
-
-    <button type="button" (click)="onLogout()">Se déconnecter</button>
-  }
+    </div>
+  </article>
 </section>

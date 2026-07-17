@@ -1,4 +1,4 @@
-import { Component, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 
@@ -10,6 +10,7 @@ import { ErrorNotificationService } from '../../core/error-handling/error-notifi
   standalone: true,
   imports: [ReactiveFormsModule],
   templateUrl: './profile.html',
+  styleUrl: './profile.scss',
 })
 export class Profile {
   private readonly fb = inject(FormBuilder);
@@ -20,6 +21,16 @@ export class Profile {
   protected readonly saving = signal(false);
   protected readonly saved = signal(false);
   protected readonly error = this.errorNotification.lastError;
+
+  protected readonly initials = computed(() => {
+    const name = this.authService.currentUser()?.displayName ?? '';
+    return name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join('');
+  });
 
   protected readonly form = this.fb.nonNullable.group({
     displayName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],

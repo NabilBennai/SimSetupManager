@@ -10,6 +10,7 @@ import { ErrorNotificationService } from '../../../core/error-handling/error-not
   standalone: true,
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './login.html',
+  styleUrl: './login.scss',
 })
 export class Login {
   private readonly fb = inject(FormBuilder);

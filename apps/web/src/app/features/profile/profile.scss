@@ -1,0 +1,6 @@
+@use '../../../styles/page-shell';
+@use '../../../styles/driver-card';
+
+.card__body {
+  gap: var(--space-4);
+}

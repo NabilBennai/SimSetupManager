@@ -10,6 +10,7 @@ import { ErrorNotificationService } from '../../../core/error-handling/error-not
   standalone: true,
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './register.html',
+  styleUrl: './register.scss',
 })
 export class Register {
   private readonly fb = inject(FormBuilder);
