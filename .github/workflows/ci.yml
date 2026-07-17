@@ -6,7 +6,7 @@ on:
     branches: [main, develop]
 
 env:
-  DATABASE_URL: "file:./prisma/local.db"
+  DATABASE_URL: 'file:./prisma/local.db'
 
 jobs:
   ci:
@@ -24,7 +24,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
+          node-version-file: '.nvmrc'
           cache: pnpm
 
       - name: Install dependencies
