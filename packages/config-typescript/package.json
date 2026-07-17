@@ -1,0 +1,12 @@
+{
+  "name": "@sim-setup-manager/config-typescript",
+  "version": "0.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "files": [
+    "*.json"
+  ],
+  "exports": {
+    "./base.json": "./tsconfig.base.json"
+  }
+}
